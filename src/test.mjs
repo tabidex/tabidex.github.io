@@ -51,8 +51,8 @@ test('正しいファイルは通る', () => {
   assert.equal(r.trip.period, '2025.09.25 - 09.28');
   assert.deepEqual(r.trip.message, ['青い海', '星空']);
 });
-test('見本ファイルとNo.001は通る', () => {
-  for (const f of ['trips/_見本.yml', 'trips/001.yml']) {
+test('見本ファイルとNo.A01は通る', () => {
+  for (const f of ['trips/_見本.yml', 'trips/A01.yml']) {
     const text = fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
     const r = validateTrip({ file: f.replace('_見本', '002'), text, iconNames: ICONS });
     assert.deepEqual(r.errors, [], f);
@@ -72,6 +72,25 @@ test('同じ項目が2回', () => expectError(GOOD + 'place_ja: 京都\n', /2回
 test('番号とファイル名がちがう', () => expectError(GOOD, /合っていません/, 1, 'trips/002.yml'));
 test('ファイル名がおかしい', () => expectError(GOOD, /ファイル名/, undefined, 'trips/001 copy.yml'));
 test('番号は " なしでもOK', () => assert.equal(run(swap('"001"', '001')).trip.number, '001'));
+test('過去の旅の番号 A01', () => {
+  const a = (num, file) => run(swap('"001"', num), file);
+  assert.equal(a('"A01"', 'trips/A01.yml').trip.number, 'A01');
+  assert.equal(a('A01', 'trips/A01.yml').trip.number, 'A01');
+  assert.equal(a('"a01"', 'trips/A01.yml').trip.number, 'A01');
+  assert.equal(a('"A1"', 'trips/A01.yml').trip.number, 'A01');
+  assert.equal(a('"A99"', 'trips/A99.yml').trip.number, 'A99');
+});
+test('過去の旅の番号がおかしい', () => {
+  expectError(swap('"001"', '"A00"'), /A01〜A99/, 1, 'trips/A01.yml');
+  expectError(swap('"001"', '"B01"'), /A01〜A99/, 1, 'trips/A01.yml');
+  expectError(swap('"001"', '"A100"'), /A01〜A99/, 1, 'trips/A01.yml');
+  expectError(swap('"001"', '"A02"'), /合っていません/, 1, 'trips/A01.yml');
+  expectError(swap('"001"', '"A01"'), /ファイル名/, undefined, 'trips/A001.yml');
+});
+test('過去の旅のQRが読み取れる', () => {
+  const url = 'https://tabidex.github.io/trip/A01/';
+  assert.ok(verifyQr(makeQrSvg(url, { color: '#3A7BD5', icon: null }), url));
+});
 test('日付の形がおかしい', () => expectError(swap('2025-09-25', '9月25日'), /年-月-日/, 4));
 test('ない日付', () => expectError(swap('2025-09-28', '2025-09-31'), /カレンダーにない/, 5));
 test('終わりが始まりより前', () => expectError(swap('2025-09-28', '2025-09-20'), /より前/, 5));

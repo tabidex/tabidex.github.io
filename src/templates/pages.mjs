@@ -68,21 +68,30 @@ export function tripPage(t, { cssPath }) {
 `;
 }
 
-/** トップページ（全旅行の一覧） */
-export function indexPage(trips, { cssPath }) {
-  const cards = trips
+/** トップページ（全旅行の一覧）。groups = [{ label, note, trips }]、空のグループは出さない */
+export function indexPage(groups, { cssPath }) {
+  const card = (t) => `      <li>
+        <a class="card" href="/trip/${esc(t.number)}/" style="--bg:${t.color};--fg:${t.fg};--k-en:${sizeEn(t.placeEn, 19, 150)}">
+          <span class="card__watermark" aria-hidden="true">${esc(t.number)}</span>
+          <span class="card__no">No.${esc(t.number)}</span>
+          <span class="card__body">
+            <span class="card__en">${esc(t.placeEn)}</span>
+            <span class="card__ja">${esc(t.placeJa)}</span>
+            <span class="card__period">${esc(t.period)}</span>
+          </span>
+        </a>
+      </li>`;
+
+  const shown = groups.filter((g) => g.trips.length);
+  const total = shown.reduce((n, g) => n + g.trips.length, 0);
+  const sections = shown
     .map(
-      (t) => `    <li>
-      <a class="card" href="/trip/${esc(t.number)}/" style="--bg:${t.color};--fg:${t.fg};--k-en:${sizeEn(t.placeEn, 19, 150)}">
-        <span class="card__watermark" aria-hidden="true">${esc(t.number)}</span>
-        <span class="card__no">No.${esc(t.number)}</span>
-        <span class="card__body">
-          <span class="card__en">${esc(t.placeEn)}</span>
-          <span class="card__ja">${esc(t.placeJa)}</span>
-          <span class="card__period">${esc(t.period)}</span>
-        </span>
-      </a>
-    </li>`,
+      (g) => `    <section class="group">
+      <h2 class="group__title">${esc(g.label)}${g.note ? `<small class="group__note">${esc(g.note)}</small>` : ''}<span class="group__count">${g.trips.length}件</span></h2>
+      <ul class="cards">
+${g.trips.map(card).join('\n')}
+      </ul>
+    </section>`,
     )
     .join('\n');
 
@@ -91,9 +100,9 @@ export function indexPage(trips, { cssPath }) {
   <main class="index">
     <header class="index__head">
       <h1 class="index__title">${SITE_NAME}</h1>
-      <p class="index__sub">旅の記録 ・ ${trips.length}件</p>
+      <p class="index__sub">ぜんぶで ${total}件</p>
     </header>
-${trips.length ? `    <ul class="cards">\n${cards}\n    </ul>` : '    <p class="empty">まだ旅がありません</p>'}
+${total ? sections : '    <p class="empty">まだ旅がありません</p>'}
   </main>
 </body>
 </html>

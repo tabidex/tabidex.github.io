@@ -56,15 +56,15 @@ export function validateTrip({ file, text, iconNames = [] }) {
 
   // ---- 1. ファイル名 ----
   const base = path.basename(file);
-  const nameMatch = base.match(/^(\d{3})\.yml$/);
+  const nameMatch = base.match(/^(\d{3}|[Aa]\d{2})\.yml$/);
   if (!nameMatch) {
     let hint = '';
     if (/\.yaml$/i.test(base)) hint = '拡張子は「.yaml」ではなく「.yml」にしてください。';
     else if (/\s/.test(base)) hint = 'ファイル名に空白が入っています。';
     else if (/[０-９]/.test(base)) hint = '数字が全角になっています。半角数字にしてください。';
-    err(`ファイル名「${base}」は「3けたの半角数字.yml」にしてください（例：002.yml）。${hint}`);
+    err(`ファイル名「${base}」は「3けたの半角数字.yml」（例：002.yml）か、過去の旅なら「A＋2けたの数字.yml」（例：A01.yml）にしてください。${hint}`);
   }
-  const fileNumber = nameMatch ? nameMatch[1] : null;
+  const fileNumber = nameMatch ? nameMatch[1].toUpperCase() : null;
 
   // ---- 2. よくある書き間違い（YAMLとして読む前に1行ずつ見る） ----
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
@@ -156,12 +156,16 @@ export function validateTrip({ file, text, iconNames = [] }) {
   if (!values.number) missing('number');
   else {
     const { value, line } = values.number;
-    const s = isEmpty(value) ? '' : String(value).trim();
+    const s = isEmpty(value) ? '' : String(value).trim().toUpperCase();
+    const archive = s.match(/^A(\d{1,2})$/); // 過去の旅（A01〜A99）
     if (s === '') err(`${label('number')}が空です。`, line);
-    else if (!/^\d{1,3}$/.test(s) || Number(s) === 0)
-      err(`${label('number')}は 001〜999 の半角数字で書いてください（例：number: "002"）。`, line);
+    else if (archive ? Number(archive[1]) === 0 : !/^\d{1,3}$/.test(s) || Number(s) === 0)
+      err(
+        `${label('number')}は、ふだんの旅なら 001〜999、過去の旅なら A01〜A99 の半角で書いてください（例：number: "002" / number: "A01"）。`,
+        line,
+      );
     else {
-      number = s.padStart(3, '0');
+      number = archive ? `A${archive[1].padStart(2, '0')}` : s.padStart(3, '0');
       if (fileNumber && number !== fileNumber)
         err(`番号「${number}」とファイル名「${base}」が合っていません。どちらかを同じ番号に直してください。`, line);
     }
