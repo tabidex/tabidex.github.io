@@ -68,7 +68,7 @@ export function tripPage(t, { cssPath }) {
 `;
 }
 
-/** トップページ（全旅行の一覧）。groups = [{ label, trips }]、空のグループは出さない */
+/** トップページ（全旅行の一覧）。groups = [{ label, note, trips }]、空のグループは出さない */
 export function indexPage(groups, { cssPath }) {
   const card = (t) => `      <li>
         <a class="card" href="/trip/${esc(t.number)}/" style="--bg:${t.color};--fg:${t.fg};--k-en:${sizeEn(t.placeEn, 19, 150)}">
@@ -87,7 +87,7 @@ export function indexPage(groups, { cssPath }) {
   const sections = shown
     .map(
       (g) => `    <section class="group">
-      <h2 class="group__title">${esc(g.label)}<span class="group__count">${g.trips.length}件</span></h2>
+      <h2 class="group__title">${esc(g.label)}${g.note ? `<small class="group__note">${esc(g.note)}</small>` : ''}<span class="group__count">${g.trips.length}件</span></h2>
       <ul class="cards">
 ${g.trips.map(card).join('\n')}
       </ul>
@@ -100,7 +100,7 @@ ${g.trips.map(card).join('\n')}
   <main class="index">
     <header class="index__head">
       <h1 class="index__title">${SITE_NAME}</h1>
-      <p class="index__sub">旅の記録 ・ ${total}件</p>
+      <p class="index__sub">ぜんぶで ${total}件</p>
     </header>
 ${total ? sections : '    <p class="empty">まだ旅がありません</p>'}
   </main>

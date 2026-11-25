@@ -15,5 +15,8 @@ export const OUT_DIR = '_site';
 export const QR_PNG_SIZE = 2048;
 
 // トップページの見出し（ふだんの旅 001〜／過去の旅 A01〜）
-export const LABEL_MAIN = 'これからの旅';
-export const LABEL_ARCHIVE = '過去の旅';
+// NOTE は見出しの横に小さく出る説明（いらなければ ''）
+export const LABEL_MAIN = '旅の記録';
+export const NOTE_MAIN = '2027年以降の旅';
+export const LABEL_ARCHIVE = '過去の旅の記録';
+export const NOTE_ARCHIVE = '';

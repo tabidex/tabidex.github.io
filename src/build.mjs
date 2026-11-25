@@ -8,7 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-import { SITE_URL, TRIPS_DIR, ICONS_DIR, OUT_DIR, QR_PNG_SIZE, LABEL_MAIN, LABEL_ARCHIVE } from './config.mjs';
+import { SITE_URL, TRIPS_DIR, ICONS_DIR, OUT_DIR, QR_PNG_SIZE, LABEL_MAIN, NOTE_MAIN, LABEL_ARCHIVE, NOTE_ARCHIVE } from './config.mjs';
 import { validateTrip } from './validate.mjs';
 import { textColorFor, qrColorFor } from './color.mjs';
 import { makeQrSvg, svgToPng, verifyQr, checkIconSvg } from './qr.mjs';
@@ -127,12 +127,12 @@ function main() {
     fs.writeFileSync(path.join(dir, 'qr.svg'), t.qrSvg);
     fs.writeFileSync(path.join(dir, 'qr.png'), svgToPng(t.qrSvg, QR_PNG_SIZE));
   }
-  // トップページ：「これからの旅（001〜）」の下に「過去の旅（A01〜）」。
+  // トップページ：「旅の記録（001〜）」の下に「過去の旅の記録（A01〜）」。
   // どちらも番号の大きい順（新しく作ったカードが上）
   const desc = (list) => [...list].sort((a, b) => b.number.localeCompare(a.number));
   const groups = [
-    { label: LABEL_MAIN, trips: desc(trips.filter((t) => !t.number.startsWith('A'))) },
-    { label: LABEL_ARCHIVE, trips: desc(trips.filter((t) => t.number.startsWith('A'))) },
+    { label: LABEL_MAIN, note: NOTE_MAIN, trips: desc(trips.filter((t) => !t.number.startsWith('A'))) },
+    { label: LABEL_ARCHIVE, note: NOTE_ARCHIVE, trips: desc(trips.filter((t) => t.number.startsWith('A'))) },
   ];
   fs.writeFileSync(path.join(out, 'index.html'), indexPage(groups, { cssPath }));
   fs.writeFileSync(path.join(out, '404.html'), notFoundPage({ cssPath }));
