@@ -1,0 +1,19 @@
+{
+  "name": "tabidex-site",
+  "private": true,
+  "type": "module",
+  "description": "旅の記録カードのQRから開く表紙ページを作るプログラム",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "test": "node src/test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.4",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- シンプルなコンパス。currentColor の部分は、QRの色（旅のテーマカラー）になります -->
+  <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="9"/>
+  <path d="M50 17 L61 50 L39 50 Z" fill="currentColor"/>
+  <path d="M39 50 L61 50 L50 83 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="50" cy="50" r="5" fill="currentColor"/>
+</svg>
