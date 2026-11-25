@@ -129,7 +129,7 @@ export function svgToPng(svg, size) {
 
 /** 作ったQRが本当に読み取れるか、いくつかの大きさで試す */
 export function verifyQr(svg, expected) {
-  for (const size of [240, 480, 1000, 2048]) {
+  for (const size of [240, 480, 640, 1000, 1400, 2048]) {
     const img = new Resvg(svg, { fitTo: { mode: 'width', value: size }, background: '#FFFFFF' }).render();
     const data = new Uint8ClampedArray(img.pixels);
     const result = jsQR(data, img.width, img.height);

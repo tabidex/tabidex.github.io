@@ -7,8 +7,9 @@ const FALLBACK_DARK = '#1A1A1A';
 // 白文字を使う最低ライン（太い大きな文字向けの基準 3:1）
 const WHITE_TEXT_MIN = 3.0;
 // QRの点の色と白背景の最低ライン。これより低いと自動で濃くします。
-const QR_MIN = 3.0;
-const QR_TARGET = 4.0;
+// （テストで、これより低い中くらいの明るさの色は読み取りに失敗しやすかったため）
+const QR_MIN = 4.2;
+const QR_TARGET = 4.5;
 
 export function hexToRgb(hex) {
   const h = hex.replace('#', '');
