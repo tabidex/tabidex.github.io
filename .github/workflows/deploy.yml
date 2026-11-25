@@ -1,0 +1,61 @@
+# 設定ファイルを保存するたびに自動で動き、チェック → サイト作成 → 公開 をします。
+# 書き間違いがあれば「チェックとサイト作成」で止まり、公開はされません（サイトは前回のまま）。
+name: サイトを作って公開
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 公開が重ならないように、1つずつ順番に動かす
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: チェックとサイト作成
+    runs-on: ubuntu-latest
+    steps:
+      - name: ファイルを取り出す
+        uses: actions/checkout@v7
+
+      - name: Node.js を準備する
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 部品をインストールする
+        run: npm ci
+
+      - name: プログラムのテスト
+        run: npm test
+
+      - name: 設定をチェックしてサイトを作る
+        run: npm run build
+
+      - name: 公開用にまとめる
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    name: 公開
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: GitHub Pages に公開する
+        id: deployment
+        uses: actions/deploy-pages@v5
