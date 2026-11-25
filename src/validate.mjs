@@ -69,6 +69,21 @@ export function validateTrip({ file, text, iconNames = [] }) {
 
   // ---- 2. よくある書き間違い（YAMLとして読む前に1行ずつ見る） ----
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
+
+  // スマホ（特にiPhone）で入りやすい「“ ”」「‘ ’」「＂」を、半角の「"」に直す。
+  // 対象は「項目名: “値”」の形の行だけ（一言 message の中身はそのまま）。
+  lines.forEach((ln, i) => {
+    const m = ln.match(/^([A-Za-z_]+)([ 　]*[:：][ 　]*)(["“”„＂‘’'])(.*?)(["“”＂‘’'])([ 　]*(#.*)?)$/);
+    if (!m || m[1] === 'message') return;
+    const [, key, sep, open, inner, close, rest] = m;
+    const odd = /[“”„＂‘’]/;
+    if (!odd.test(open) && !odd.test(close)) return; // ふつうの「"」「'」なら何もしない
+    if (/["“”＂]/.test(inner)) return; // 中にも引用符があるときは触らない
+    lines[i] = `${key}${sep}"${inner}"${rest}`;
+    warn(`「${key}」の行の引用符が「“ ”」などになっていたので、半角の「"」に直して使いました（iPhoneの「スマート句読点」で起きやすいです）。`, i + 1);
+  });
+  text = lines.join('\n');
+
   let inMessage = false; // 「message: |」の中にいるか
   lines.forEach((ln, i) => {
     const n = i + 1;
@@ -231,7 +246,8 @@ export function validateTrip({ file, text, iconNames = [] }) {
     let s = String(value).trim().replace(/＃/g, '#').replace(/^#/, '');
     if (/^[0-9a-fA-F]{3}$/.test(s)) s = s.split('').map((c) => c + c).join('');
     if (/^[0-9a-fA-F]{6}$/.test(s)) return '#' + s.toUpperCase();
-    err(`${label(key)}「${value}」は、「#」と6けたの英数字（0〜9 と A〜F）で書いてください（例：${key}: "#3A7BD5"）。`, line);
+    const quoteHint = /[“”„＂‘’]/.test(String(value)) ? '「“」「”」が入っています。前後を半角の「"」で囲み直してください。' : '';
+    err(`${label(key)}「${value}」は、「#」と6けたの英数字（0〜9 と A〜F）で書いてください（例：${key}: "#3A7BD5"）。${quoteHint}`, line);
     return null;
   }
   const color = parseColor('color', !placeholder);
