@@ -68,9 +68,46 @@ export function tripPage(t, { cssPath }) {
 `;
 }
 
+// 並び順の切り替えボタン（JavaScriptが使えるときだけ表示）
+const SORT_SWITCH = `    <div class="sort" role="group" aria-label="並び順" hidden>
+      <button type="button" class="sort__btn" data-sort="number" aria-pressed="true">番号順</button>
+      <button type="button" class="sort__btn" data-sort="date" aria-pressed="false">日付順</button>
+    </div>`;
+
+// 並び替えの仕組み。最初は番号順（ページに書かれている順）。
+// 日付順は旅の始まりの日が新しい順。見出し（グループ）ごとに並び替える。
+// 最後に選んだ並びは、そのスマホ・パソコンのブラウザが覚えておく。
+const SORT_SCRIPT = `<script>
+(function () {
+  var KEY = 'tabidex-sort';
+  var box = document.querySelector('.sort');
+  if (!box) return;
+  box.hidden = false;
+  var byNumber = function (a, b) { return b.dataset.number.localeCompare(a.dataset.number); };
+  var byDate = function (a, b) { return b.dataset.start.localeCompare(a.dataset.start) || byNumber(a, b); };
+  function apply(mode) {
+    document.querySelectorAll('.cards').forEach(function (ul) {
+      Array.prototype.slice.call(ul.children)
+        .sort(mode === 'date' ? byDate : byNumber)
+        .forEach(function (li) { ul.appendChild(li); });
+    });
+    box.querySelectorAll('.sort__btn').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.sort === mode));
+    });
+  }
+  box.addEventListener('click', function (e) {
+    var btn = e.target.closest('.sort__btn');
+    if (!btn) return;
+    apply(btn.dataset.sort);
+    try { localStorage.setItem(KEY, btn.dataset.sort); } catch (err) {}
+  });
+  try { if (localStorage.getItem(KEY) === 'date') apply('date'); } catch (err) {}
+})();
+</script>`;
+
 /** トップページ（全旅行の一覧）。groups = [{ label, note, trips }]、空のグループは出さない */
 export function indexPage(groups, { cssPath }) {
-  const card = (t) => `      <li>
+  const card = (t) => `      <li data-number="${esc(t.number)}" data-start="${esc(t.start)}">
         <a class="card" href="/trip/${esc(t.number)}/" style="--bg:${t.color};--fg:${t.fg};--k-en:${sizeEn(t.placeEn, 19, 150)}">
           <span class="card__watermark" aria-hidden="true">${esc(t.number)}</span>
           <span class="card__no">No.${esc(t.number)}</span>
@@ -102,8 +139,10 @@ ${g.trips.map(card).join('\n')}
       <h1 class="index__title">${SITE_NAME}</h1>
       <p class="index__sub">ぜんぶで ${total}件</p>
     </header>
+${total > 1 ? SORT_SWITCH : ''}
 ${total ? sections : '    <p class="empty">まだ旅がありません</p>'}
   </main>
+${total > 1 ? SORT_SCRIPT : ''}
 </body>
 </html>
 `;

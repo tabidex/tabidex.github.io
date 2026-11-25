@@ -225,6 +225,46 @@ a {
   opacity: 0.65;
 }
 
+.sort {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 4px 22px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sort[hidden] {
+  display: none;
+}
+
+.sort__btn {
+  min-width: 88px;
+  min-height: 38px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.sort__btn[aria-pressed='true'] {
+  background: #22252a;
+  color: #f4f1ea;
+  opacity: 1;
+}
+
+.sort__btn:focus-visible {
+  outline: 3px solid #22252a;
+  outline-offset: 2px;
+}
+
 .group + .group {
   margin-top: 36px;
 }
