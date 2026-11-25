@@ -20,15 +20,33 @@ const label = (key) => `「${key}」（${FIELDS[key]}）`;
 
 const MAX_MESSAGE_LINES = 3;
 
+// QRのアイコンは日本語の名前でも選べるようにする
+const ICON_ALIASES = {
+  飛行機: 'plane',
+  ひこうき: 'plane',
+  車: 'car',
+  くるま: 'car',
+  電車: 'train',
+  でんしゃ: 'train',
+  船: 'ship',
+  ふね: 'ship',
+};
+
+// 選べるアイコンの一覧（エラー文用）。.svg は名前だけ、.png はファイル名で表示
+function iconChoices(iconNames) {
+  const list = iconNames.filter((n) => /\.(svg|png)$/i.test(n)).map((n) => n.replace(/\.svg$/i, ''));
+  return list.length ? list.join(' / ') : '（assets/icons/ にアイコンがありません）';
+}
+
 /**
  * 1つの設定ファイルをチェックする。
  * @param {object} p
  * @param {string} p.file  例：trips/001.yml
  * @param {string} p.text  ファイルの中身
- * @param {(name:string)=>boolean} p.iconExists  アイコンがあるか調べる関数
+ * @param {string[]} p.iconNames  assets/icons/ にあるファイルの名前の一覧
  * @returns {{trip: object|null, errors: Array, warnings: Array}}
  */
-export function validateTrip({ file, text, iconExists = () => true }) {
+export function validateTrip({ file, text, iconNames = [] }) {
   const errors = [];
   const warnings = [];
   const err = (message, line) => {
@@ -239,11 +257,15 @@ export function validateTrip({ file, text, iconExists = () => true }) {
   let qrIcon = null;
   if (values.qr_icon && !isEmpty(values.qr_icon.value)) {
     const { value, line } = values.qr_icon;
-    const s = String(value).trim();
-    if (!/^[A-Za-z0-9_\-.]+\.(svg|png)$/i.test(s) || s.startsWith('.'))
-      err(`${label('qr_icon')}は、assets/icons/ に入れたファイルの名前だけを書いてください（例：qr_icon: "default.svg"）。使えるのは .svg か .png です。`, line);
-    else if (!iconExists(s)) err(`${label('qr_icon')}：assets/icons/ に「${s}」が見つかりません。ファイル名（大文字・小文字も）を確認してください。`, line);
-    else qrIcon = s;
+    const raw = String(value).trim();
+    const s = ICON_ALIASES[raw] || raw;
+    const choices = iconChoices(iconNames);
+    const found = /\.(svg|png)$/i.test(s)
+      ? iconNames.find((n) => n === s)
+      : [`${s}.svg`, `${s}.png`].find((n) => iconNames.includes(n));
+    if (!/^[A-Za-z0-9_\-.]+$/.test(s) || s.startsWith('.') || !found)
+      err(`${label('qr_icon')}：「${raw}」というアイコンはありません。使えるのは ${choices} です（なしにするときは ""）。`, line);
+    else qrIcon = found;
   }
 
   if (errors.length) return { trip: null, errors, warnings };

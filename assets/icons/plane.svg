@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- シンプルな飛行機。currentColor の部分は、QRの色（旅のテーマカラー）になります -->
+  <!-- 飛行機（qr_icon: plane）。currentColor の部分は、QRの色（旅のテーマカラー）になります -->
   <g transform="rotate(45 50 50)" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
     <rect x="44" y="6" width="12" height="84" rx="6"/>
     <path d="M55 36 L93 58 L93 66 L55 57 Z"/>
