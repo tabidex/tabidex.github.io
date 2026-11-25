@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- シンプルなコンパス。currentColor の部分は、QRの色（旅のテーマカラー）になります -->
-  <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="9"/>
-  <path d="M50 17 L61 50 L39 50 Z" fill="currentColor"/>
-  <path d="M39 50 L61 50 L50 83 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
-  <circle cx="50" cy="50" r="5" fill="currentColor"/>
+  <!-- シンプルな飛行機。currentColor の部分は、QRの色（旅のテーマカラー）になります -->
+  <g transform="rotate(45 50 50)" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+    <rect x="44" y="6" width="12" height="84" rx="6"/>
+    <path d="M55 36 L93 58 L93 66 L55 57 Z"/>
+    <path d="M45 36 L7 58 L7 66 L45 57 Z"/>
+    <path d="M55 75 L71 85 L71 91 L55 87 Z"/>
+    <path d="M45 75 L29 85 L29 91 L45 87 Z"/>
+  </g>
 </svg>

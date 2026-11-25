@@ -311,7 +311,8 @@ tabidex.github.io/
 │  ├─ 001.yml                   旅1つ＝ファイル1つ
 │  └─ _見本.yml                 新しい旅を作るときのお手本（公開されない）
 ├─ assets/icons/              ← QRの真ん中のアイコン
-│  └─ default.svg               最初から入っているコンパスのアイコン
+│  ├─ default.svg               飛行機のアイコン（最初の設定）
+│  └─ compass.svg               コンパスのアイコン（qr_icon: "compass.svg" で使えます）
 ├─ src/                       ← 自動で動くプログラム（触らなくてOK）
 │  ├─ build.mjs                 全体の流れ
 │  ├─ validate.mjs              書き間違いのチェック
