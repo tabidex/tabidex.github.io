@@ -11,6 +11,7 @@ export const FIELDS = {
   start: '旅の始まりの日',
   end: '旅の終わりの日',
   color: 'テーマカラー',
+  qr_color: 'QRコードの色',
   message: '一言',
   album_url: 'GoogleフォトのURL',
   qr_icon: 'QRのアイコン',
@@ -82,8 +83,9 @@ export function validateTrip({ file, text, iconNames = [] }) {
     }
     if (/^message[ 　]*[:：][ 　]*[|>][-+]?[ 　]*(#.*)?$/.test(ln)) inMessage = true;
     if (/^\s*#/.test(ln)) return; // コメント行は気にしない
-    if (/^color:[ 　]*[#＃]/.test(ln))
-      err(`${label('color')}が読み取れません。「#」から後ろはメモ扱いになってしまうため、"#3A7BD5" のように前後を「"」で囲んでください。`, n);
+    const unquoted = ln.match(/^(color|qr_color):[ 　]*[#＃]/);
+    if (unquoted)
+      err(`${label(unquoted[1])}が読み取れません。「#」から後ろはメモ扱いになってしまうため、"#3A7BD5" のように前後を「"」で囲んでください。`, n);
     if (/^[ 　]*\t/.test(ln)) err('行の先頭にタブ文字があります。半角スペースに直してください。', n);
     if (/^　/.test(ln)) err('行の先頭に全角スペースがあります。消すか、半角スペースに直してください。', n);
     const fw = ln.match(/^([A-Za-z_]+)[ 　]*：/);
@@ -171,20 +173,26 @@ export function validateTrip({ file, text, iconNames = [] }) {
     }
   }
 
+  // ---- 準備中の箱かどうか ----
+  // 地名（英語・日本語）と日付（start・end）が全部空なら「準備中」のページにする。
+  // QRコードだけ先に作りたいとき用。トップページの一覧には出さない。
+  const blank = (k) => !values[k] || isEmpty(values[k].value);
+  const placeholder = ['place_en', 'place_ja', 'start', 'end'].every(blank);
+
   // ---- 地名 ----
-  const placeEn = requiredText('place_en');
+  const placeEn = placeholder ? null : requiredText('place_en');
   if (placeEn != null) {
     if (!/^[\x20-\x7E]+$/.test(placeEn))
       err(`${label('place_en')}は半角の英字で書いてください（例：Ishigaki）。全角の文字が入っています。`, values.place_en.line);
     else if (placeEn.length > 18) warn(`${label('place_en')}が長いので、表紙では文字が小さくなります。`, values.place_en.line);
   }
-  const placeJa = requiredText('place_ja');
+  const placeJa = placeholder ? null : requiredText('place_ja');
   if (placeJa != null && placeJa.length > 12)
     warn(`${label('place_ja')}が長いので、表紙では文字が小さくなります。`, values.place_ja.line);
 
   // ---- 日付 ----
-  const start = parseDate('start');
-  const end = parseDate('end');
+  const start = placeholder ? null : parseDate('start');
+  const end = placeholder ? null : parseDate('end');
   if (start && end) {
     if (end.str < start.str) err(`${label('end')}が${label('start')}より前になっています。`, values.end.line);
     else if (daysBetween(start, end) > 60)
@@ -208,23 +216,26 @@ export function validateTrip({ file, text, iconNames = [] }) {
     return { y, m: mo, d, str: `${m[1]}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
   }
 
-  // ---- color ----
-  let color = null;
-  if (!values.color) missing('color');
-  else {
-    const { value, line, rawLine } = values.color;
+  // ---- color / qr_color ----
+  // required: 空のときにエラーにするか（color は必須。準備中の箱と qr_color は空でもOK）
+  function parseColor(key, required) {
+    const f = values[key];
+    if (!f) return required ? (missing(key), null) : null;
+    const { value, line, rawLine } = f;
     if (isEmpty(value)) {
       if (/#/.test(rawLine))
-        err(`${label('color')}が読み取れません。「#」から後ろはメモ扱いになってしまうため、"#3A7BD5" のように前後を「"」で囲んでください。`, line);
-      else err(`${label('color')}が空です（例：color: "#3A7BD5"）。`, line);
-    } else {
-      let s = String(value).trim().replace(/＃/g, '#').replace(/^#/, '');
-      if (/^[0-9a-fA-F]{3}$/.test(s)) s = s.split('').map((c) => c + c).join('');
-      if (/^[0-9a-fA-F]{6}$/.test(s)) color = '#' + s.toUpperCase();
-      else
-        err(`${label('color')}「${value}」は、「#」と6けたの英数字（0〜9 と A〜F）で書いてください（例：color: "#3A7BD5"）。`, line);
+        err(`${label(key)}が読み取れません。「#」から後ろはメモ扱いになってしまうため、"#3A7BD5" のように前後を「"」で囲んでください。`, line);
+      else if (required) err(`${label(key)}が空です（例：${key}: "#3A7BD5"）。`, line);
+      return null;
     }
+    let s = String(value).trim().replace(/＃/g, '#').replace(/^#/, '');
+    if (/^[0-9a-fA-F]{3}$/.test(s)) s = s.split('').map((c) => c + c).join('');
+    if (/^[0-9a-fA-F]{6}$/.test(s)) return '#' + s.toUpperCase();
+    err(`${label(key)}「${value}」は、「#」と6けたの英数字（0〜9 と A〜F）で書いてください（例：${key}: "#3A7BD5"）。`, line);
+    return null;
   }
+  const color = parseColor('color', !placeholder);
+  const qrColor = parseColor('qr_color', false);
 
   // ---- message ----
   let message = [];
@@ -272,18 +283,23 @@ export function validateTrip({ file, text, iconNames = [] }) {
     else qrIcon = found;
   }
 
+  if (placeholder && (message.length || albumUrl))
+    warn('地名と日付がまだ空なので「準備中」のページになります。一言とアルバムのボタンは、地名と日付を書くと表示されます。');
+
   if (errors.length) return { trip: null, errors, warnings };
 
   return {
     trip: {
       file,
       number,
+      placeholder,
       placeEn,
       placeJa,
-      start: start.str,
-      end: end.str,
-      period: formatPeriod(start, end),
+      start: start ? start.str : null,
+      end: end ? end.str : null,
+      period: start ? formatPeriod(start, end) : '',
       color,
+      qrColor,
       message,
       albumUrl,
       qrIcon,

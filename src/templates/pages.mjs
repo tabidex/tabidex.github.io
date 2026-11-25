@@ -36,9 +36,34 @@ const sizeJa = (text) => Math.min(8.5, 76 / Math.max(text.length, 1)).toFixed(2)
 const ICON_PLAY = `<svg class="btn__icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="currentColor" opacity=".16"/><path d="M13 10.2v11.6a1 1 0 0 0 1.5.86l9.3-5.8a1 1 0 0 0 0-1.72l-9.3-5.8a1 1 0 0 0-1.5.86z" fill="currentColor"/></svg>`;
 const ICON_LOCK = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="2.5" y="7" width="11" height="8" rx="2.2" fill="currentColor"/></svg>`;
 
+// 準備中の箱で色が決まっていないときの背景色
+export const PLACEHOLDER_BG = '#3C4048';
+
+/** 準備中のページ（地名と日付がまだ空の旅。QRコードだけ先に作るとき用） */
+export function placeholderPage(t, { cssPath }) {
+  const style = `--bg:${t.pageColor};--fg:${t.fg};--k-en:13`;
+  return `${head({ title: `No.${t.number} 準備中 | ${SITE_NAME}`, themeColor: t.pageColor, cssPath })}
+<body class="cover-page" style="${style}">
+  <main class="cover">
+    <div class="cover__watermark" aria-hidden="true">${esc(t.number)}</div>
+    <p class="cover__label"><span>TRAVEL</span><span class="cover__no">No.${esc(t.number)}</span></p>
+    <div class="cover__main">
+      <h1 class="cover__en">Coming soon</h1>
+      <hr class="cover__rule">
+      <p class="cover__message">この旅のページは、ただいま準備中です。<br>もうしばらくお待ちください。</p>
+    </div>
+    <div class="cover__action">
+      <div><a class="cover__back" href="/">すべての旅を見る</a></div>
+    </div>
+  </main>
+</body>
+</html>
+`;
+}
+
 /** 表紙ページ */
 export function tripPage(t, { cssPath }) {
-  const style = `--bg:${t.color};--fg:${t.fg};--k-en:${sizeEn(t.placeEn, 17, 136)};--k-ja:${sizeJa(t.placeJa)}`;
+  const style = `--bg:${t.pageColor};--fg:${t.fg};--k-en:${sizeEn(t.placeEn, 17, 136)};--k-ja:${sizeJa(t.placeJa)}`;
   const message = t.message.length
     ? `\n      <p class="cover__message">${t.message.map(esc).join('<br>')}</p>`
     : '';
@@ -46,7 +71,7 @@ export function tripPage(t, { cssPath }) {
     ? `<a class="btn" href="${esc(t.albumUrl)}" rel="noopener noreferrer">${ICON_PLAY}<span>動画を見る</span></a>`
     : `<span class="btn btn--disabled" aria-disabled="true">動画は準備中です</span>`;
 
-  return `${head({ title: `No.${t.number} ${t.placeEn} | ${SITE_NAME}`, themeColor: t.color, cssPath })}
+  return `${head({ title: `No.${t.number} ${t.placeEn} | ${SITE_NAME}`, themeColor: t.pageColor, cssPath })}
 <body class="cover-page" style="${style}">
   <main class="cover">
     <div class="cover__watermark" aria-hidden="true">${esc(t.number)}</div>

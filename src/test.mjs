@@ -118,6 +118,48 @@ test('アイコンは名前・ファイル名・日本語で選べる', () => {
 test('英語の地名に全角', () => expectError(swap('Ishigaki', 'Ｉｓｈｉｇａｋｉ'), /半角の英字/, 2));
 test('空のファイル', () => expectError('', /空/));
 
+const BOX = `number: "A02"
+place_en: ""
+place_ja: ""
+start: ""
+end: ""
+color: ""
+message: ""
+album_url: ""
+qr_color: "#000000"
+qr_icon: "plane"
+`;
+test('準備中の箱（地名・日付が空）は通る', () => {
+  const r = validateTrip({ file: 'trips/A02.yml', text: BOX, iconNames: ICONS });
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.trip.placeholder, true);
+  assert.equal(r.trip.qrColor, '#000000');
+  assert.equal(r.trip.color, null);
+});
+test('準備中の箱は項目の行がなくてもOK', () => {
+  const r = validateTrip({ file: 'trips/A02.yml', text: 'number: "A02"\n', iconNames: ICONS });
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.trip.placeholder, true);
+});
+test('地名だけ書いて日付が空ならエラー', () => {
+  const r = validateTrip({ file: 'trips/A02.yml', text: BOX.replace('place_en: ""', 'place_en: Miyako'), iconNames: ICONS });
+  assert.equal(r.trip, null);
+  assert.ok(r.errors.some((e) => /place_ja/.test(e.message)));
+  assert.ok(r.errors.some((e) => /start/.test(e.message)));
+});
+test('ふつうの旅では色が必須', () => expectError(swap('color: "#3A7BD5"', 'color: ""'), /color.*空/, 6));
+test('qr_color の " 忘れ', () => expectError(GOOD + 'qr_color: #000000\n', /qr_color.*「"」で囲んで/));
+test('qr_color の形がおかしい', () => expectError(GOOD + 'qr_color: "black"\n', /qr_color.*6けた/));
+test('qr_color は空ならテーマカラー（null）', () => assert.equal(run(GOOD + 'qr_color: ""\n').trip.qrColor, null));
+test('ファイル A02・A03 は準備中の箱として通る', () => {
+  for (const f of ['trips/A02.yml', 'trips/A03.yml']) {
+    const text = fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
+    const r = validateTrip({ file: f, text, iconNames: ICONS });
+    assert.deepEqual(r.errors, [], f);
+    assert.equal(r.trip.placeholder, true, f);
+  }
+});
+
 console.log('GoogleフォトのURL');
 test('album の形', () => assert.ok(checkAlbumUrl('https://photos.google.com/album/AF1QipXYZ').url));
 test('share の形（key つき）', () =>
