@@ -120,6 +120,14 @@ test('明るい色のQRは濃くなる', () => {
   assert.ok(q.adjusted);
   assert.ok(contrast(q.color, '#FFFFFF') >= 4);
 });
+test('中くらいの明るさの色のQRも濃くなる', () => {
+  for (const c of ['#5B8C85', '#F06292']) {
+    const q = qrColorFor(c);
+    assert.ok(q.adjusted, c);
+    const url = 'https://tabidex.github.io/trip/003/';
+    assert.ok(verifyQr(makeQrSvg(url, { color: q.color, icon: null }), url), c);
+  }
+});
 test('青のQRはそのまま', () => assert.equal(qrColorFor('#3A7BD5').color, '#3A7BD5'));
 
 console.log('QRコード');

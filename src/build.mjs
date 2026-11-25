@@ -72,7 +72,7 @@ function main() {
     if (qc.adjusted)
       warnings.push({
         file: t.file,
-        message: `テーマカラーが明るいため、QRコードの色だけ少し濃い ${qc.color} にしました（読み取りやすくするため。ページの色はそのままです）。`,
+        message: `テーマカラーのままだとQRコードが読み取りにくいため、QRの色だけ少し濃い ${qc.color} にしました（ページの色はそのままです）。`,
       });
     const url = `${SITE_URL}/trip/${t.number}/`;
     t.qrSvg = makeQrSvg(url, { color: qc.color, icon: t.icon || null });
@@ -112,7 +112,9 @@ function main() {
     fs.writeFileSync(path.join(dir, 'qr.svg'), t.qrSvg);
     fs.writeFileSync(path.join(dir, 'qr.png'), svgToPng(t.qrSvg, QR_PNG_SIZE));
   }
-  fs.writeFileSync(path.join(out, 'index.html'), indexPage(trips, { cssPath }));
+  // トップページの並び順：旅の始まりの日が新しい順（同じ日なら番号の大きい順）
+  const newestFirst = [...trips].sort((a, b) => b.start.localeCompare(a.start) || b.number.localeCompare(a.number));
+  fs.writeFileSync(path.join(out, 'index.html'), indexPage(newestFirst, { cssPath }));
   fs.writeFileSync(path.join(out, '404.html'), notFoundPage({ cssPath }));
 
   reportSuccess(trips, warnings, notices, SITE_URL);
