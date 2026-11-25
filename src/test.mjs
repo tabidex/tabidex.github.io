@@ -160,6 +160,31 @@ test('ファイル A02・A03 は準備中の箱として通る', () => {
   }
 });
 
+test('iPhoneの「“ ”」は自動で直す', () => {
+  const r = run(swap('color: "#3A7BD5"', 'color: “#3A7BD5”').replace('number: "001"', 'number: ”001”'));
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.trip.color, '#3A7BD5');
+  assert.equal(r.trip.number, '001');
+  assert.equal(r.warnings.filter((w) => /スマート句読点/.test(w.message)).length, 2);
+});
+test('片方だけ「”」・全角「＂」・「‘ ’」も直す', () => {
+  assert.equal(run(swap('color: "#3A7BD5"', 'color: "#3A7BD5”')).trip.color, '#3A7BD5');
+  assert.equal(run(swap('color: "#3A7BD5"', 'color: ＂#3A7BD5＂')).trip.color, '#3A7BD5');
+  assert.equal(run(swap('color: "#3A7BD5"', 'color: ‘#3A7BD5’')).trip.color, '#3A7BD5');
+  assert.equal(run(swap('"plane"', '“car”')).trip.qrIcon, 'car.svg');
+});
+test('URLの「“ ”」も直す', () =>
+  assert.equal(
+    run(swap('"https://photos.google.com/album/AF1QipABC123"', '“https://photos.google.com/album/AF1QipABC123”')).trip.albumUrl,
+    'https://photos.google.com/album/AF1QipABC123',
+  ));
+test('一言の中の「“ ”」はそのまま', () => {
+  const r = run(swap('message: |\n  青い海\n  星空\n', 'message: “最高”\n'));
+  assert.deepEqual(r.trip.message, ['“最高”']);
+  assert.equal(r.warnings.length, 0);
+});
+test('ふつうの「"」なら何も言わない', () => assert.equal(run(GOOD).warnings.length, 0));
+
 console.log('GoogleフォトのURL');
 test('album の形', () => assert.ok(checkAlbumUrl('https://photos.google.com/album/AF1QipXYZ').url));
 test('share の形（key つき）', () =>
