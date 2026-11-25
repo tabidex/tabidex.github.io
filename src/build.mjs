@@ -28,8 +28,15 @@ function listTripFiles() {
     .sort();
 }
 
-const iconNames = fs.existsSync(r(ICONS_DIR)) ? fs.readdirSync(r(ICONS_DIR)) : [];
-const iconExists = (name) => iconNames.includes(name);
+const iconNames = fs.existsSync(r(ICONS_DIR)) ? fs.readdirSync(r(ICONS_DIR)).sort(iconOrder) : [];
+
+// アイコンの表示順（乗り物を先に）
+function iconOrder(a, b) {
+  const first = ['plane.svg', 'car.svg', 'train.svg', 'ship.svg'];
+  const ia = first.indexOf(a) === -1 ? 99 : first.indexOf(a);
+  const ib = first.indexOf(b) === -1 ? 99 : first.indexOf(b);
+  return ia - ib || a.localeCompare(b);
+}
 
 function main() {
   const errors = [];
@@ -41,7 +48,7 @@ function main() {
   for (const name of listTripFiles()) {
     const file = `${TRIPS_DIR}/${name}`;
     const text = fs.readFileSync(r(file), 'utf8').replace(/^﻿/, '');
-    const res = validateTrip({ file, text, iconExists });
+    const res = validateTrip({ file, text, iconNames });
     errors.push(...res.errors);
     warnings.push(...res.warnings);
     if (res.trip) trips.push(res.trip);
@@ -101,7 +108,7 @@ function main() {
   const cssPath = `/style.css?v=${cssHash}`;
   fs.writeFileSync(path.join(out, 'style.css'), css);
 
-  const favicon = fs.readFileSync(r(ICONS_DIR, 'default.svg'), 'utf8').replace(/currentColor/g, '#3A7BD5');
+  const favicon = fs.readFileSync(r(ICONS_DIR, 'plane.svg'), 'utf8').replace(/currentColor/g, '#3A7BD5');
   fs.writeFileSync(path.join(out, 'favicon.svg'), favicon);
 
   trips.sort((a, b) => a.number.localeCompare(b.number));
@@ -112,9 +119,9 @@ function main() {
     fs.writeFileSync(path.join(dir, 'qr.svg'), t.qrSvg);
     fs.writeFileSync(path.join(dir, 'qr.png'), svgToPng(t.qrSvg, QR_PNG_SIZE));
   }
-  // トップページの並び順：旅の始まりの日が新しい順（同じ日なら番号の大きい順）
-  const newestFirst = [...trips].sort((a, b) => b.start.localeCompare(a.start) || b.number.localeCompare(a.number));
-  fs.writeFileSync(path.join(out, 'index.html'), indexPage(newestFirst, { cssPath }));
+  // トップページの並び順：番号の大きい順（新しく作ったカードが上）
+  const byNumberDesc = [...trips].sort((a, b) => b.number.localeCompare(a.number));
+  fs.writeFileSync(path.join(out, 'index.html'), indexPage(byNumberDesc, { cssPath }));
   fs.writeFileSync(path.join(out, '404.html'), notFoundPage({ cssPath }));
 
   reportSuccess(trips, warnings, notices, SITE_URL);

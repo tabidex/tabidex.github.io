@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 電車（qr_icon: train）。currentColor の部分は、QRの色（旅のテーマカラー）になります -->
+  <rect x="21" y="6" width="58" height="72" rx="16" fill="currentColor"/>
+  <rect x="30" y="17" width="40" height="26" rx="6" fill="#FFFFFF"/>
+  <circle cx="35" cy="61" r="6" fill="#FFFFFF"/>
+  <circle cx="65" cy="61" r="6" fill="#FFFFFF"/>
+  <path fill="currentColor" d="M33 76 L41 76 L31 94 L22 94 Z M59 76 L67 76 L78 94 L69 94 Z"/>
+</svg>

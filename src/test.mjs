@@ -17,7 +17,7 @@ message: |
   青い海
   星空
 album_url: "https://photos.google.com/album/AF1QipABC123"
-qr_icon: "default.svg"
+qr_icon: "plane"
 `;
 
 let passed = 0;
@@ -32,7 +32,8 @@ function test(name, fn) {
   }
 }
 
-const run = (text, file = 'trips/001.yml') => validateTrip({ file, text, iconExists: (n) => n === 'default.svg' });
+const ICONS = ['plane.svg', 'car.svg', 'train.svg', 'ship.svg'];
+const run = (text, file = 'trips/001.yml') => validateTrip({ file, text, iconNames: ICONS });
 const expectError = (text, pattern, line, file) => {
   const r = run(text, file);
   assert.equal(r.trip, null, '失敗するはずが成功した');
@@ -53,7 +54,7 @@ test('正しいファイルは通る', () => {
 test('見本ファイルとNo.001は通る', () => {
   for (const f of ['trips/_見本.yml', 'trips/001.yml']) {
     const text = fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
-    const r = validateTrip({ file: f.replace('_見本', '002'), text, iconExists: () => true });
+    const r = validateTrip({ file: f.replace('_見本', '002'), text, iconNames: ICONS });
     assert.deepEqual(r.errors, [], f);
   }
 });
@@ -89,7 +90,12 @@ test('URLは空でもOK', () => assert.equal(run(swap('"https://photos.google.co
 test('URLがGoogleフォトではない', () => expectError(swap('https://photos.google.com/album/AF1QipABC123', 'https://example.com/x'), /GoogleフォトのURLではない/, 10));
 test('先頭に全角スペース', () => expectError(swap('place_en:', '　place_en:'), /全角スペース/, 2));
 test('タブ文字', () => expectError(swap('  青い海', '\t青い海'), /タブ/, 8));
-test('アイコンが見つからない', () => expectError(swap('default.svg', 'plane.svg'), /見つかりません/, 11));
+test('アイコンが見つからない', () => expectError(swap('"plane"', '"rocket"'), /plane \/ car \/ train \/ ship/, 11));
+test('アイコンは名前・ファイル名・日本語で選べる', () => {
+  for (const [v, want] of [['car', 'car.svg'], ['train.svg', 'train.svg'], ['船', 'ship.svg'], ['ひこうき', 'plane.svg']])
+    assert.equal(run(swap('"plane"', `"${v}"`)).trip.qrIcon, want, v);
+  assert.equal(run(swap('"plane"', '""')).trip.qrIcon, null);
+});
 test('英語の地名に全角', () => expectError(swap('Ishigaki', 'Ｉｓｈｉｇａｋｉ'), /半角の英字/, 2));
 test('空のファイル', () => expectError('', /空/));
 
@@ -131,13 +137,18 @@ test('中くらいの明るさの色のQRも濃くなる', () => {
 test('青のQRはそのまま', () => assert.equal(qrColorFor('#3A7BD5').color, '#3A7BD5'));
 
 console.log('QRコード');
-const icon = { type: 'svg', data: fs.readFileSync(new URL('../assets/icons/default.svg', import.meta.url), 'utf8') };
-for (const n of ['001', '042', '999']) {
-  test(`No.${n} のQRが読み取れる（アイコンあり・なし）`, () => {
-    const url = `https://tabidex.github.io/trip/${n}/`;
-    assert.ok(verifyQr(makeQrSvg(url, { color: '#3A7BD5', icon }), url));
-    assert.ok(verifyQr(makeQrSvg(url, { color: '#3A7BD5', icon: null }), url));
+for (const name of ICONS) {
+  const icon = { type: 'svg', data: fs.readFileSync(new URL(`../assets/icons/${name}`, import.meta.url), 'utf8') };
+  test(`${name} 入りのQRが読み取れる（No.001 / 042 / 999）`, () => {
+    for (const n of ['001', '042', '999']) {
+      const url = `https://tabidex.github.io/trip/${n}/`;
+      assert.ok(verifyQr(makeQrSvg(url, { color: '#3A7BD5', icon }), url), n);
+    }
   });
 }
+test('アイコンなしのQRが読み取れる', () => {
+  const url = 'https://tabidex.github.io/trip/001/';
+  assert.ok(verifyQr(makeQrSvg(url, { color: '#3A7BD5', icon: null }), url));
+});
 
 console.log(`\nすべて OK（${passed} 件）`);
