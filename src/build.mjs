@@ -8,7 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-import { SITE_URL, TRIPS_DIR, ICONS_DIR, OUT_DIR, QR_PNG_SIZE } from './config.mjs';
+import { SITE_URL, TRIPS_DIR, ICONS_DIR, OUT_DIR, QR_PNG_SIZE, LABEL_MAIN, LABEL_ARCHIVE } from './config.mjs';
 import { validateTrip } from './validate.mjs';
 import { textColorFor, qrColorFor } from './color.mjs';
 import { makeQrSvg, svgToPng, verifyQr, checkIconSvg } from './qr.mjs';
@@ -52,6 +52,14 @@ function main() {
     errors.push(...res.errors);
     warnings.push(...res.warnings);
     if (res.trip) trips.push(res.trip);
+  }
+
+  // 同じ番号の旅が2つないか（例：a01.yml と A01.yml）
+  const seen = new Map();
+  for (const t of trips) {
+    if (seen.has(t.number))
+      errors.push({ file: t.file, message: `番号「${t.number}」は ${seen.get(t.number)} でも使われています。どちらかの番号を変えてください。` });
+    else seen.set(t.number, t.file);
   }
 
   // アイコンの中身のチェック
@@ -119,9 +127,14 @@ function main() {
     fs.writeFileSync(path.join(dir, 'qr.svg'), t.qrSvg);
     fs.writeFileSync(path.join(dir, 'qr.png'), svgToPng(t.qrSvg, QR_PNG_SIZE));
   }
-  // トップページの並び順：番号の大きい順（新しく作ったカードが上）
-  const byNumberDesc = [...trips].sort((a, b) => b.number.localeCompare(a.number));
-  fs.writeFileSync(path.join(out, 'index.html'), indexPage(byNumberDesc, { cssPath }));
+  // トップページ：「これからの旅（001〜）」の下に「過去の旅（A01〜）」。
+  // どちらも番号の大きい順（新しく作ったカードが上）
+  const desc = (list) => [...list].sort((a, b) => b.number.localeCompare(a.number));
+  const groups = [
+    { label: LABEL_MAIN, trips: desc(trips.filter((t) => !t.number.startsWith('A'))) },
+    { label: LABEL_ARCHIVE, trips: desc(trips.filter((t) => t.number.startsWith('A'))) },
+  ];
+  fs.writeFileSync(path.join(out, 'index.html'), indexPage(groups, { cssPath }));
   fs.writeFileSync(path.join(out, '404.html'), notFoundPage({ cssPath }));
 
   reportSuccess(trips, warnings, notices, SITE_URL);

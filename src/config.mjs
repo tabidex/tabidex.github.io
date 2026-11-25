@@ -13,3 +13,7 @@ export const OUT_DIR = '_site';
 
 // 印刷用PNGの大きさ（ピクセル）
 export const QR_PNG_SIZE = 2048;
+
+// トップページの見出し（ふだんの旅 001〜／過去の旅 A01〜）
+export const LABEL_MAIN = 'これからの旅';
+export const LABEL_ARCHIVE = '過去の旅';
