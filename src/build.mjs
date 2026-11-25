@@ -12,7 +12,7 @@ import { SITE_URL, TRIPS_DIR, ICONS_DIR, OUT_DIR, QR_PNG_SIZE, LABEL_MAIN, NOTE_
 import { validateTrip } from './validate.mjs';
 import { textColorFor, qrColorFor } from './color.mjs';
 import { makeQrSvg, svgToPng, verifyQr, checkIconSvg } from './qr.mjs';
-import { tripPage, indexPage, notFoundPage } from './templates/pages.mjs';
+import { tripPage, placeholderPage, indexPage, notFoundPage, PLACEHOLDER_BG } from './templates/pages.mjs';
 import { reportFailure, reportSuccess } from './report.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -82,12 +82,15 @@ function main() {
 
   // ---- 2. 色とQRの準備（QRが読み取れるかもここで確かめる） ----
   for (const t of trips) {
-    t.fg = textColorFor(t.color).fg;
-    const qc = qrColorFor(t.color);
+    t.pageColor = t.color || PLACEHOLDER_BG; // 準備中の箱で色が空なら落ち着いた灰色
+    t.fg = textColorFor(t.pageColor).fg;
+    // QRの色：qr_color があればそれ、なければテーマカラー、どちらもなければ黒
+    const qrBase = t.qrColor || t.color || '#000000';
+    const qc = qrColorFor(qrBase);
     if (qc.adjusted)
       warnings.push({
         file: t.file,
-        message: `テーマカラーのままだとQRコードが読み取りにくいため、QRの色だけ少し濃い ${qc.color} にしました（ページの色はそのままです）。`,
+        message: `${t.qrColor ? '「qr_color」' : 'テーマカラー'}のままだとQRコードが読み取りにくいため、QRの色だけ少し濃い ${qc.color} にしました（ページの色はそのままです）。`,
       });
     const url = `${SITE_URL}/trip/${t.number}/`;
     t.qrSvg = makeQrSvg(url, { color: qc.color, icon: t.icon || null });
@@ -97,7 +100,12 @@ function main() {
         message: 'QRコードがうまく読み取れませんでした。「qr_icon」を "" にしてアイコンを外すか、テーマカラーを濃い色にしてください。',
       });
     }
-    if (!t.albumUrl)
+    if (t.placeholder)
+      notices.push({
+        file: t.file,
+        message: '地名と日付がまだ空なので「準備中」のページになります（トップページの一覧には出ません）。QRコードはもう使えます。',
+      });
+    else if (!t.albumUrl)
       notices.push({ file: t.file, message: '「album_url」がまだ空なので、ボタンは「動画は準備中です」と表示されます。' });
   }
 
@@ -123,16 +131,18 @@ function main() {
   for (const t of trips) {
     const dir = path.join(out, 'trip', t.number);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'index.html'), tripPage(t, { cssPath }));
+    fs.writeFileSync(path.join(dir, 'index.html'), t.placeholder ? placeholderPage(t, { cssPath }) : tripPage(t, { cssPath }));
     fs.writeFileSync(path.join(dir, 'qr.svg'), t.qrSvg);
     fs.writeFileSync(path.join(dir, 'qr.png'), svgToPng(t.qrSvg, QR_PNG_SIZE));
   }
   // トップページ：「旅の記録（001〜）」の下に「過去の旅の記録（A01〜）」。
   // どちらも番号の大きい順（新しく作ったカードが上）
+  // 準備中の箱は一覧に出さない
+  const listed = trips.filter((t) => !t.placeholder);
   const desc = (list) => [...list].sort((a, b) => b.number.localeCompare(a.number));
   const groups = [
-    { label: LABEL_MAIN, note: NOTE_MAIN, trips: desc(trips.filter((t) => !t.number.startsWith('A'))) },
-    { label: LABEL_ARCHIVE, note: NOTE_ARCHIVE, trips: desc(trips.filter((t) => t.number.startsWith('A'))) },
+    { label: LABEL_MAIN, note: NOTE_MAIN, trips: desc(listed.filter((t) => !t.number.startsWith('A'))) },
+    { label: LABEL_ARCHIVE, note: NOTE_ARCHIVE, trips: desc(listed.filter((t) => t.number.startsWith('A'))) },
   ];
   fs.writeFileSync(path.join(out, 'index.html'), indexPage(groups, { cssPath }));
   fs.writeFileSync(path.join(out, '404.html'), notFoundPage({ cssPath }));

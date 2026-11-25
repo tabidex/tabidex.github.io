@@ -56,7 +56,7 @@ export function reportFailure(errors, warnings) {
 export function reportSuccess(trips, warnings, notices, siteUrl) {
   console.log('');
   console.log(` ✓ ${trips.length} 件の旅でサイトを作りました`);
-  for (const t of trips) console.log(`   No.${t.number} ${t.placeEn} → ${siteUrl}/trip/${t.number}/`);
+  for (const t of trips) console.log(`   No.${t.number} ${t.placeholder ? '（準備中）' : t.placeEn} → ${siteUrl}/trip/${t.number}/`);
   for (const w of warnings) {
     console.log(`\n△ ${where(w)}\n  ${w.message}`);
     annotate('warning', w, '確認してください');
@@ -76,7 +76,7 @@ export function reportSuccess(trips, warnings, notices, siteUrl) {
       '|---|---|---|---|',
       ...trips.map(
         (t) =>
-          `| No.${t.number} | ${cell(t.placeEn)} / ${cell(t.placeJa)} | ${siteUrl}/trip/${t.number}/ | [SVG](${siteUrl}/trip/${t.number}/qr.svg) ・ [PNG](${siteUrl}/trip/${t.number}/qr.png) |`,
+          `| No.${t.number} | ${t.placeholder ? '（準備中）' : `${cell(t.placeEn)} / ${cell(t.placeJa)}`} | ${siteUrl}/trip/${t.number}/ | [SVG](${siteUrl}/trip/${t.number}/qr.svg) ・ [PNG](${siteUrl}/trip/${t.number}/qr.png) |`,
       ),
       warnings.length ? warningTable(warnings) : '',
       notices.length
