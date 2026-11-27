@@ -51,12 +51,13 @@ test('正しいファイルは通る', () => {
   assert.equal(r.trip.period, '2025.09.25 - 09.28');
   assert.deepEqual(r.trip.message, ['青い海', '星空']);
 });
-test('見本ファイルとNo.A01は通る', () => {
-  for (const f of ['trips/_見本.yml', 'trips/A01.yml']) {
-    const text = fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
-    const r = validateTrip({ file: f.replace('_見本', '002'), text, iconNames: ICONS });
-    assert.deepEqual(r.errors, [], f);
-  }
+// ※ trips/ の旅のファイル（001.yml や A01.yml など）は、ここでは読まない。
+//   中身はいつでも書き換えられるので、テストが旅の中身に左右されないようにするため。
+//   （旅のファイルの書き間違いは、npm run build のチェックで見つけます）
+const SAMPLE = fs.readFileSync(new URL('../trips/_見本.yml', import.meta.url), 'utf8');
+test('見本ファイルは通る', () => {
+  const r = validateTrip({ file: 'trips/002.yml', text: SAMPLE, iconNames: ICONS });
+  assert.deepEqual(r.errors, []);
 });
 test('色を " で囲み忘れ', () => expectError(swap('color: "#3A7BD5"', 'color: #3A7BD5'), /「"」で囲んで/, 6));
 test('色の形がおかしい', () => expectError(swap('#3A7BD5', '#3A7BZ5'), /6けたの英数字/, 6));
@@ -151,13 +152,14 @@ test('ふつうの旅では色が必須', () => expectError(swap('color: "#3A7BD
 test('qr_color の " 忘れ', () => expectError(GOOD + 'qr_color: #000000\n', /qr_color.*「"」で囲んで/));
 test('qr_color の形がおかしい', () => expectError(GOOD + 'qr_color: "black"\n', /qr_color.*6けた/));
 test('qr_color は空ならテーマカラー（null）', () => assert.equal(run(GOOD + 'qr_color: ""\n').trip.qrColor, null));
-test('ファイル A02・A03 は準備中の箱として通る', () => {
-  for (const f of ['trips/A02.yml', 'trips/A03.yml']) {
-    const text = fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
-    const r = validateTrip({ file: f, text, iconNames: ICONS });
-    assert.deepEqual(r.errors, [], f);
-    assert.equal(r.trip.placeholder, true, f);
-  }
+test('見本の地名と日付を空にすると準備中の箱になる', () => {
+  const text = SAMPLE.replace('place_en: Okinawa', 'place_en: ""')
+    .replace('place_ja: 沖縄', 'place_ja: ""')
+    .replace('start: 2026-01-01', 'start: ""')
+    .replace('end: 2026-01-03', 'end: ""');
+  const r = validateTrip({ file: 'trips/002.yml', text, iconNames: ICONS });
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.trip.placeholder, true);
 });
 
 test('iPhoneの「“ ”」は自動で直す', () => {
