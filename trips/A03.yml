@@ -52,4 +52,4 @@ qr_color: "#000000"
 #   plane（飛行機） / car（車） / train（電車） / ship（船）
 #   「飛行機」「車」「電車」「船」と日本語で書いてもOKです。
 # アイコンをなしにするときは "" にします。
-qr_icon: "car"
+qr_icon: "train"
